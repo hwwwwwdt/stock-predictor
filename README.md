@@ -224,25 +224,57 @@ pytest tests/test_stock.py -v
 └──────────────────┘                        └──────────────────────┘
 ```
 
+> **部署順序**：先後端 → 再前端 → 最後回補後端環境變數。
+> 因為前端需要後端的 URL，後端需要前端的 URL，所以第一次部署後端時可以先不設環境變數。
+
 ### 步驟一：部署後端（Backend）
 
 1. 前往 [vercel.com/new](https://vercel.com/new)，匯入此 GitHub 倉庫
-2. **Root Directory** 設為 `backend`
-3. Framework Preset 選擇 **Other**（Vercel 會自動偵測 Python / FastAPI）
-4. 新增環境變數：`ALLOWED_ORIGINS` = 前端專案的 Vercel URL（例如 `https://stock-predictor.vercel.app`）
-5. 點擊 Deploy
+2. **Project Name** 設為 `stock-predictor-api`（不可與前端重複）
+3. **Root Directory** 點 Edit，輸入 `backend`
+4. **Framework Preset** 選擇 **FastAPI**
+5. 環境變數先不用設，直接點 **Deploy**
+6. 部署完成後，記下後端 URL（例如 `https://stock-predictor-api.vercel.app`）
 
 ### 步驟二：部署前端（Frontend）
 
-1. 再次匯入同一個 GitHub 倉庫（建立第二個 Vercel 專案）
-2. **Root Directory** 設為 `frontend`
-3. Framework Preset 自動偵測為 **Vite**
-4. 新增環境變數：`VITE_API_BASE` = 後端專案部署完成後的 URL（例如 `https://stock-predictor-api.vercel.app`）
-5. 點擊 Deploy
+1. 回到 Dashboard，再次點 **Add New > Project**，匯入同一個 GitHub 倉庫
+2. **Project Name** 設為 `stock-predictor`
+3. **Root Directory** 點 Edit，輸入 `frontend`
+4. **Framework Preset** 自動偵測為 **Vite**
+5. 展開 **Environment Variables**，新增：
 
-### 注意事項
+   | Key | Value | 說明 |
+   |-----|-------|------|
+   | `VITE_API_BASE` | `https://stock-predictor-api.vercel.app` | 後端 URL，**結尾不加斜線** |
 
-- **冷啟動延遲**：後端以 Serverless Function 形式運行，首次請求可能需要 3-5 秒
-- **Bundle 大小**：移除 `scikit-learn` 後，`pandas` + `numpy` + `yfinance` 約 80MB，遠低於 Vercel 250MB 上限
-- **自動部署**：每次 `git push` 會同時觸發前後端的部署，Vercel 會自動偵測變更範圍
+6. 點擊 **Deploy**
+7. 部署完成後，記下前端 URL（例如 `https://stock-predictor.vercel.app`）
+
+### 步驟三：回補後端 CORS 設定
+
+1. 回到 Vercel Dashboard，進入**後端專案**（`stock-predictor-api`）
+2. 點上方 **Settings** → 左側 **Environment Variables**
+3. 新增：
+
+   | Key | Value | 說明 |
+   |-----|-------|------|
+   | `ALLOWED_ORIGINS` | `https://stock-predictor.vercel.app` | 前端 URL，**結尾不加斜線** |
+
+4. 回到 **Deployments** 頁籤，點最新部署旁的 **⋮ > Redeploy**，讓環境變數生效
+
+### 環境變數總覽
+
+| 變數名稱 | 設定位置 | 用途 |
+|----------|---------|------|
+| `VITE_API_BASE` | 前端專案 | 告訴前端「後端 API 在哪裡」（build 時注入，改完需 Redeploy） |
+| `ALLOWED_ORIGINS` | 後端專案 | 告訴後端「允許哪個前端來源跨域存取」（CORS 白名單） |
+
+> **注意**：`VITE_` 開頭的環境變數是在 **build 時**寫入前端程式碼的，修改後必須 **Redeploy** 才會生效。
+
+### 其他注意事項
+
+- **冷啟動延遲**：後端以 Serverless Function 運行，首次請求可能需 3-5 秒
+- **Bundle 大小**：使用 NumPy 取代 scikit-learn 後，總 bundle 約 80MB，遠低於 250MB 上限
+- **自動部署**：每次 `git push` 會同時觸發兩個專案的部署，Vercel 自動偵測變更範圍
 
