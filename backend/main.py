@@ -5,6 +5,7 @@ Stock Predictor API — 應用程式進入點
 使用 lifespan context manager 管理應用程式生命週期。
 """
 
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -13,8 +14,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routers.stock import router as stock_router
 
-# 允許跨域請求的前端來源清單
-ALLOWED_ORIGINS: list[str] = ["http://localhost:5173"]
+# 允許跨域請求的前端來源清單（支援透過環境變數 ALLOWED_ORIGINS 新增額外來源，以逗號分隔）
+ALLOWED_ORIGINS: list[str] = [
+    "http://localhost:5173",
+    *[o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()],
+]
 
 
 @asynccontextmanager

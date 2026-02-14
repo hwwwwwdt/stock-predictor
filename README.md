@@ -90,6 +90,7 @@
 stock-predictor/
 ├── backend/
 │   ├── main.py                      # FastAPI 進入點（CORS、lifespan）
+│   ├── index.py                     # Vercel Serverless 入口點（re-export app）
 │   ├── requirements.txt             # Python 相依套件
 │   ├── routers/
 │   │   └── stock.py                 # GET /api/stock/{ticker} 路由與預測邏輯
@@ -102,6 +103,7 @@ stock-predictor/
 │   ├── index.html                   # SPA 入口
 │   ├── package.json                 # Node.js 相依套件
 │   ├── vite.config.js               # Vite 建置設定
+│   ├── .env.example                 # 環境變數範例（Vercel 部署用）
 │   └── src/
 │       ├── main.jsx                 # React 掛載點
 │       ├── index.css                # TailwindCSS v4 入口
@@ -207,4 +209,40 @@ pytest tests/test_stock.py -v
 | 預測資料 | historical_data 非空、最多 30 筆、predicted_data 恰好 5 筆、資料點格式、預測價格正數 |
 | 錯誤處理 | 無效 ticker 回傳 404 |
 | 健康檢查 | 根路徑回傳 success |
+
+---
+
+## Vercel 部署
+
+本專案支援部署至 **Vercel**，前端與後端分別建立兩個 Vercel 專案，指向同一個 GitHub 倉庫的不同根目錄。
+
+```
+┌──────────────────┐                        ┌──────────────────────┐
+│  Vercel Project A │  ── API requests ──>  │  Vercel Project B    │
+│  Frontend (Vite)  │                        │  Backend (FastAPI)   │
+│  Root: frontend/  │  <── JSON response ── │  Root: backend/      │
+└──────────────────┘                        └──────────────────────┘
+```
+
+### 步驟一：部署後端（Backend）
+
+1. 前往 [vercel.com/new](https://vercel.com/new)，匯入此 GitHub 倉庫
+2. **Root Directory** 設為 `backend`
+3. Framework Preset 選擇 **Other**（Vercel 會自動偵測 Python / FastAPI）
+4. 新增環境變數：`ALLOWED_ORIGINS` = 前端專案的 Vercel URL（例如 `https://stock-predictor.vercel.app`）
+5. 點擊 Deploy
+
+### 步驟二：部署前端（Frontend）
+
+1. 再次匯入同一個 GitHub 倉庫（建立第二個 Vercel 專案）
+2. **Root Directory** 設為 `frontend`
+3. Framework Preset 自動偵測為 **Vite**
+4. 新增環境變數：`VITE_API_BASE` = 後端專案部署完成後的 URL（例如 `https://stock-predictor-api.vercel.app`）
+5. 點擊 Deploy
+
+### 注意事項
+
+- **冷啟動延遲**：後端以 Serverless Function 形式運行，首次請求可能需要 3-5 秒
+- **Bundle 大小**：`scikit-learn` + `pandas` + `numpy` 約 120MB，在 Vercel 250MB 上限內
+- **自動部署**：每次 `git push` 會同時觸發前後端的部署，Vercel 會自動偵測變更範圍
 
