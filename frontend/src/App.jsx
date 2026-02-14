@@ -13,7 +13,7 @@ import PriceChart from "./components/PriceChart.jsx";
 import PredictionTable from "./components/PredictionTable.jsx";
 
 /** 後端 API 基礎位址（部署時透過 VITE_API_BASE 環境變數指定，本地開發自動 fallback 至 localhost） */
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const API_BASE = (import.meta.env.VITE_API_BASE || "http://localhost:8000").replace(/\/+$/, "");
 
 const App = () => {
   /* ---------- 狀態管理 ---------- */
