@@ -24,7 +24,7 @@
 |------|------|------|
 | **Backend** | FastAPI, Pydantic v2, Uvicorn | 高效能非同步 API 框架，搭配型別安全的請求/回應驗證 |
 | **Data** | yfinance, pandas, NumPy | 即時股價抓取與歷史資料處理 |
-| **ML Model** | scikit-learn (LinearRegression) | 以日期序數為特徵、收盤價為目標的線性迴歸預測模型 |
+| **ML Model** | NumPy (polyfit Linear Regression) | 以日期序數為特徵、收盤價為目標的線性迴歸預測模型 |
 | **Frontend** | React 19, Vite 6, TailwindCSS v4 | 現代化 SPA 架構，零 CSS 檔案的原子化樣式系統 |
 | **Testing** | pytest, httpx, FastAPI TestClient | 14 項自動化測試涵蓋報價、預測、錯誤處理 |
 
@@ -78,7 +78,7 @@
 
 1. 透過 `yfinance` 下載近 3 個月歷史資料，截取最近 30 個交易日
 2. 將日期轉換為序數（`datetime.toordinal()`）作為模型特徵
-3. 使用 `sklearn.linear_model.LinearRegression` 擬合線性關係
+3. 使用 `numpy.polyfit` 擬合一次多項式（線性迴歸）
 4. 向未來推算 5 個交易日的日期序數，透過 `model.predict()` 取得預測價格
 5. 自動排除週末（weekday >= 5），確保預測日期皆為交易日
 
@@ -243,6 +243,6 @@ pytest tests/test_stock.py -v
 ### 注意事項
 
 - **冷啟動延遲**：後端以 Serverless Function 形式運行，首次請求可能需要 3-5 秒
-- **Bundle 大小**：`scikit-learn` + `pandas` + `numpy` 約 120MB，在 Vercel 250MB 上限內
+- **Bundle 大小**：移除 `scikit-learn` 後，`pandas` + `numpy` + `yfinance` 約 80MB，遠低於 Vercel 250MB 上限
 - **自動部署**：每次 `git push` 會同時觸發前後端的部署，Vercel 會自動偵測變更範圍
 

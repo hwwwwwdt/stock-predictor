@@ -4,7 +4,7 @@
 提供 GET /api/stock/{ticker} 端點：
 1. 透過 yfinance 取得即時報價
 2. 下載近 30 個交易日收盤價作為歷史資料
-3. 使用 scikit-learn LinearRegression 預測未來 5 個交易日價格
+3. 使用 NumPy 線性迴歸預測未來 5 個交易日價格
 """
 
 from datetime import datetime, timedelta
@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 from fastapi import APIRouter, HTTPException
-from sklearn.linear_model import LinearRegression
 
 from schemas.stock_schema import (
     PredictionInfo,
@@ -64,7 +63,8 @@ def _predict_prices(
 ) -> list[PricePoint]:
     """使用線性迴歸模型預測未來交易日的股價。
 
-    模型特徵：日期序數（date.toordinal()），將日期轉為連續整數，
+    以 numpy.polyfit 擬合一次多項式（y = slope * x + intercept），
+    模型特徵為日期序數（date.toordinal()），將日期轉為連續整數，
     使模型能捕捉線性時間趨勢。
 
     Args:
@@ -75,9 +75,10 @@ def _predict_prices(
     Returns:
         包含 PREDICTION_DAYS 個預測價格點的列表（自動跳過週末）
     """
-    model = LinearRegression()
-    X: np.ndarray = dates_ordinal.reshape(-1, 1)  # shape: (n, 1)
-    model.fit(X, prices)
+    # np.polyfit(x, y, deg=1) 回傳 [slope, intercept]
+    slope: float
+    intercept: float
+    slope, intercept = np.polyfit(dates_ordinal, prices, 1)
 
     future_points: list[PricePoint] = []
     business_day_count: int = 0
@@ -88,8 +89,8 @@ def _predict_prices(
 
         # 跳過週末（weekday: 0=一 ~ 4=五, 5=六, 6=日）
         if future_date.weekday() < 5:
-            future_ordinal: np.ndarray = np.array([[future_date.toordinal()]])
-            predicted_price: float = round(float(model.predict(future_ordinal)[0]), 2)
+            future_ordinal: int = future_date.toordinal()
+            predicted_price: float = round(float(slope * future_ordinal + intercept), 2)
 
             future_points.append(
                 PricePoint(
