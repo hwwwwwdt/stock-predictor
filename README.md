@@ -208,8 +208,3 @@ pytest tests/test_stock.py -v
 | 錯誤處理 | 無效 ticker 回傳 404 |
 | 健康檢查 | 根路徑回傳 success |
 
----
-
-## License
-
-MIT
